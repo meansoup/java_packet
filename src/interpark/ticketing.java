@@ -14,62 +14,61 @@ public class ticketing {
 	private static Retrofit retrofit;
 	private static CommService commService;
 	private static OkHttpClient client;
+	private static String ID, PW, Other;
 	
 	public static void main(String[] args){
 		System.out.println("Hello World");
+		ID = "alsrnr1210";
+		PW = "123qwe%2521%40%2523"; // 특수문자 표현식 확인 필요. ex/ 123qwe!@# 가 123qwe%2521%40%2523 가 됨
+		Other = "frPCID=&frOtherMem=&frBizCode=WEBBR&frCaptchaUserText=";
 		
 		client = new OkHttpClient.Builder().addInterceptor(new AddCookie())
 				.addNetworkInterceptor(new ReceiveCookie()).build();
-		
-//		Request request = new Request.Builder()
-//	    .url("http://ticket.interpark.com")
-//	    .build();
-//		
-//		okhttp3.Response response = null;
-//		try {
-//			response = client.newCall(request).execute();
-//		} catch (IOException e1) {
-//			// TODO Auto-generated catch block
-//			e1.printStackTrace();
-//		}
-//		response.body().close();
-		
-		
 		retrofit = new Retrofit.Builder().baseUrl("https://ticket.interpark.com").client(client).build();
 		commService = retrofit.create(CommService.class);
 		
 		TPLogin();
 		
-		postMsg("/", "");
+		//postMsg("/", "");
 	}
 	
 	public static void TPLogin(){
-		Call<ResponseBody> call = commService.TPLogin();
+		Call<ResponseBody> call = commService.NoBodyReq("/Gate/TPLogin.asp?CPage=B&MN=Y&tid1=main_gnb&tid2=right_top&tid3=login&tid4=login");
 		
 		call.enqueue(new Callback<ResponseBody>(){
-
-			public void onFailure(Call<ResponseBody> arg0, Throwable arg1) {
-				// TODO Auto-generated method stub
-				
-			}
+			public void onFailure(Call<ResponseBody> arg0, Throwable arg1) {}
 
 			public void onResponse(Call<ResponseBody> arg0, Response<ResponseBody> response) {
-				Headers headers = response.headers();
+				//frUID=alsrnr1210&frPWD=123qwe%2521%40%2523&frPCID=&frOtherMem=&frBizCode=WEBBR&frCaptchaUserText=
+				String bodyString = "frUID=" + ID + "&frPWD=" + PW + "&" + Other;
+				RequestBody body = RequestBody.create(MediaType.parse("application/json"), bodyString);
 				
+				Call<ResponseBody> login = commService.OnBodyReq("/gate/TPLoginCheck_Return.asp", body);
+			
+				login.enqueue(new Callback<ResponseBody>(){
 
+					public void onFailure(Call<ResponseBody> arg0, Throwable arg1) {}
+
+					public void onResponse(Call<ResponseBody> arg0, Response<ResponseBody> response) {
+						System.out.println("#----------------------------#");
+						System.out.println(response.headers());
+					}
+					
+				});
+				
+//				Headers headers = response.headers();
 //				long end = System.currentTimeMillis();
 //				System.out.println("end: " + end);
 //				System.out.println("tunnelTo: " + headers);
 			}
 		});
 	}
-	
 	public static void postMsg(String sub, String msg){
 
 		//String msg = "frUID=alsrnr1210&frPWD=123qwe%2521%40%2523&frPCID=&frOtherMem=&frBizCode=WEBBR&frCaptchaUserText=";
 		RequestBody body = RequestBody.create(MediaType.parse("application/json"), msg);
 		
-		Call<ResponseBody> call = commService.postMassage(sub, body);
+		Call<ResponseBody> call = commService.OnBodyReq(sub, body);
 		
 		call.enqueue(new Callback<ResponseBody>(){
 

@@ -21,10 +21,10 @@ public interface CommService {
 	
 // 	첫 로그인 페이지
 //	https://ticket.interpark.com/Gate/TPLogin.asp
-	@POST("/Gate/TPLogin.asp")
-	Call<ResponseBody> TPLogin();
+	@POST("{subPath}")
+	Call<ResponseBody> NoBodyReq(@Path("subPath") String path);
 	
 	@POST("{subPath}")
-	Call<ResponseBody> postMassage(@Path("subPath") String path, @Body RequestBody str);
+	Call<ResponseBody> OnBodyReq(@Path("subPath") String path, @Body RequestBody str);
 	
 }

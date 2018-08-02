@@ -5,8 +5,6 @@ import java.io.IOException;
 import okhttp3.Interceptor;
 import okhttp3.Response;
 
-// about interceptor
-// https://github.com/square/okhttp/wiki/interceptors
 public class ReceiveCookie implements Interceptor {
 	CookieMemory cm;
 	public ReceiveCookie(){
