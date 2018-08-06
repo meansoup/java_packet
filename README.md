@@ -2,9 +2,14 @@
 1. [retrofit](https://futurestud.io/tutorials/retrofit-getting-started-and-android-client)
 2. [interceptor & official](https://github.com/square/okhttp/wiki/interceptors)
 
+* asp
+    웹 서버에서 해석이 된 결과를 웹 브라우저에 HTML 형식으로 보여주는 기능
+    웹 서버를 통해서만 볼 수 있고, 브라우저에서 실행할 수 없음
+    ms 윈도우 서버에서만 사용하는 파일 형식
 
 
-#TODO::
+
+1#TODO::
 1. TPLogin.asp
 TPLogin.asp~~~ 에 보냈을 때 resp에 set-cookie가 없음. 대신 req가 쿠키를 가지고 있음.
 TPLogin.asp에 보냈을 때 resp로 set-cookie를 받으나, 이 후 로그인시 에러페이지 발생. resp로 set-cookie를 다시 받음.

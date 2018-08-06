@@ -19,8 +19,6 @@ public interface CommService {
 //		"Accept-Language: ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7"
 //	})
 	
-// 	첫 로그인 페이지
-//	https://ticket.interpark.com/Gate/TPLogin.asp
 	@POST("{subPath}")
 	Call<ResponseBody> NoBodyReq(@Path("subPath") String path);
 	

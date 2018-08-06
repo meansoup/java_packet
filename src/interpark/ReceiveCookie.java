@@ -25,12 +25,10 @@ public class ReceiveCookie implements Interceptor {
 					boolean secure = val[1].contains("secure");
 					String[] path = val[1].split("path=");
 
-//					System.out.println("key:[" + key[0] + "]" + "val:[" + val[0] + "]"
-//										+ "secure:[" + secure + "]" + "path:[" + path[1] + "]");
+					System.out.println("[RECV] key:[" + key[0] + "]" + "val:[" + val[0] + "]"
+										+ "secure:[" + secure + "]" + "path:[" + path[1] + "]");
 
 					cm.PutCookie(key[0], val[0], secure, path[1]);
-					CookieFormat cf = cm.GetCookieList().get(0);
-					System.out.println(cf.key + " " + cf.value + " " + cf.secure + " " + cf.path);
 				}
 			}
 		}

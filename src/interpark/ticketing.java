@@ -1,5 +1,6 @@
 package interpark;
 
+import java.io.IOException;
 import okhttp3.Headers;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
@@ -14,82 +15,134 @@ public class ticketing {
 	private static Retrofit retrofit;
 	private static CommService commService;
 	private static OkHttpClient client;
-	private static String ID, PW, Other;
+	private static String ID, PW;
 	
-	public static void main(String[] args){
-		System.out.println("Hello World");
-		ID = "alsrnr1210";
-		PW = "123qwe%2521%40%2523"; // 특수문자 표현식 확인 필요. ex/ 123qwe!@# 가 123qwe%2521%40%2523 가 됨
-		Other = "frPCID=&frOtherMem=&frBizCode=WEBBR&frCaptchaUserText=";
-		
-		client = new OkHttpClient.Builder().addInterceptor(new AddCookie())
-				.addNetworkInterceptor(new ReceiveCookie()).build();
-		retrofit = new Retrofit.Builder().baseUrl("https://ticket.interpark.com").client(client).build();
-		commService = retrofit.create(CommService.class);
-		
-		TPLogin();
-		
-		//postMsg("/", "");
+	private enum NO{
+		TPLogin, LocalWelcom, TPRightWing_New, LocalWelcom__login, TPRightWing
 	}
 	
-	public static void TPLogin(){
-		Call<ResponseBody> call = commService.NoBodyReq("/Gate/TPLogin.asp?CPage=B&MN=Y&tid1=main_gnb&tid2=right_top&tid3=login&tid4=login");
+	public static String HandleNoMsg(NO req){
+		System.out.println("+++++" + req);
+		String msg = null;
+		switch(req){
+			case TPLogin: msg = "/Gate/TPLogin.asp?CPage=B&MN=Y&tid1=main_gnb&tid2=right_top&tid3=login&tid4=login"; break;
+			// case TPLogin: msg = "/Gate/TPLogin.asp"; break;
+			case LocalWelcom:
+			case LocalWelcom__login: msg = "/Lib/js/LocalWelcom.asp"; break;
+			case TPRightWing_New: msg = "/Include/TPRightWing_New.asp?Type=openWing"; break;
+			case TPRightWing: msg = "/Include/TPRightWing.asp"; break;
+			default: break; 
+		}
+		return msg;
+	}
+	
+	public static void HandleNoResponse(NO req, Response<ResponseBody> resp){
+		switch(req){
+			case TPLogin: NoBodyReq(NO.LocalWelcom); break;
+			case LocalWelcom: NoBodyReq(NO.TPRightWing_New); break;
+			case TPRightWing_New: OnBodyReq(ON.TPLoginCheck, null); break;
+			case LocalWelcom__login: NoBodyReq(NO.TPRightWing); break;
+			case TPRightWing:
+				try {
+					System.out.println("Login Check, TPRightWing\n" + resp.body().string());
+				} catch (IOException e) {}
+				break;
+			
+			default: break;
+		}
+	}
+	
+	private enum ON{
+		TPLoginCheck, TPLoginConfirm
+	}
+	
+	public static String HandleOnMsg(ON req){
+		System.out.println("+++++" + req);
+		String msg = null;
+		switch(req){
+			case TPLoginCheck: msg = "/gate/TPLoginCheck_Return.asp"; break;
+			case TPLoginConfirm: msg = "/Gate/TPLoginConfirm.asp"; break;
+			
+			default: break;
+		}
+		return msg;
+	}
+	
+	public static RequestBody HandleOnBody(ON req, String strBody){
+		if(strBody == null){
+			switch(req){
+				case TPLoginCheck:
+						strBody = "frUID=" + ID + "&frPWD=" + PW + "&" +
+								"frPCID=&frOtherMem=&frBizCode=WEBBR&frCaptchaUserText="; break;
+				case TPLoginConfirm:
+						PW = "123qwe%21%40%23"; // loginCheck랑 loginConfirm이랑 특수문자 값이 다르게 들어감.
+						strBody = "saveMemId=N&autologin=&CPage=B&GPage=http%3A%2F%2Fticket.interpark.com%2F&" +
+								"GroupCode=&Tiki=&Point=&PlayDate=&PlaySeq=&HeartYN=&TikiAutoPop=&BookingBizCode=&PCID=&" +
+								"CryptoID=" + ID + "&CryptoPWD=" + PW + "&SNSYN=N&MemBizCD=WEBBR&OtherMem="; break;
+				default: break;
+			}
+		}
+		
+		RequestBody body = RequestBody.create(MediaType.parse("application/json"), strBody);
+		return body;
+	}
+	
+	public static void HandleOnResponse(ON req, Response<ResponseBody> resp){
+		switch(req){
+			case TPLoginCheck:
+					try {
+							System.out.println("Bye World\n" + resp.body().string());
+						} catch (IOException e) {}
+					OnBodyReq(ON.TPLoginConfirm, null);
+					break;
+			case TPLoginConfirm: NoBodyReq(NO.LocalWelcom__login); break;
+			
+			default: break;
+		}
+	}
+	
+	public static void NoBodyReq(final NO req){
+		String msg = HandleNoMsg(req);
+		
+		Call<ResponseBody> call = commService.NoBodyReq(msg);
+		
+		call.enqueue(new Callback<ResponseBody>(){	
+			public void onFailure(Call<ResponseBody> arg0, Throwable arg1) {}
+
+			public void onResponse(Call<ResponseBody> arg0, Response<ResponseBody> response) {
+				HandleNoResponse(req, response);
+			}
+		});
+	}
+				
+	public static void OnBodyReq(final ON req, String strBody){
+		String msg = HandleOnMsg(req);
+		RequestBody body = HandleOnBody(req, strBody);
+		
+		Call<ResponseBody> call = commService.OnBodyReq(msg, body);
 		
 		call.enqueue(new Callback<ResponseBody>(){
 			public void onFailure(Call<ResponseBody> arg0, Throwable arg1) {}
 
-			public void onResponse(Call<ResponseBody> arg0, Response<ResponseBody> response) {
-				//frUID=alsrnr1210&frPWD=123qwe%2521%40%2523&frPCID=&frOtherMem=&frBizCode=WEBBR&frCaptchaUserText=
-				String bodyString = "frUID=" + ID + "&frPWD=" + PW + "&" + Other;
-				RequestBody body = RequestBody.create(MediaType.parse("application/json"), bodyString);
-				
-				Call<ResponseBody> login = commService.OnBodyReq("/gate/TPLoginCheck_Return.asp", body);
-			
-				login.enqueue(new Callback<ResponseBody>(){
-
-					public void onFailure(Call<ResponseBody> arg0, Throwable arg1) {}
-
-					public void onResponse(Call<ResponseBody> arg0, Response<ResponseBody> response) {
-						System.out.println("#----------------------------#");
-						System.out.println(response.headers());
-					}
-					
-				});
-				
-//				Headers headers = response.headers();
-//				long end = System.currentTimeMillis();
-//				System.out.println("end: " + end);
-//				System.out.println("tunnelTo: " + headers);
+			public void onResponse(Call<ResponseBody> arg0, Response<ResponseBody> response) {	
+				HandleOnResponse(req, response);
 			}
 		});
 	}
-	public static void postMsg(String sub, String msg){
-
-		//String msg = "frUID=alsrnr1210&frPWD=123qwe%2521%40%2523&frPCID=&frOtherMem=&frBizCode=WEBBR&frCaptchaUserText=";
-		RequestBody body = RequestBody.create(MediaType.parse("application/json"), msg);
+	
+	public static void main(String[] args){
+		System.out.println("Hello World");
+		ID = "alsrnr1210";
+		PW = "123qwe%2521%40%2523"; // 특수문자 표현식 확인 필요. ex/ 123qwe!@# 가 123qwe%2521%40%2523 가 됨 뒤에선  123qwe%21%40%23 가 됨
 		
-		Call<ResponseBody> call = commService.OnBodyReq(sub, body);
+		client = new OkHttpClient.Builder().addNetworkInterceptor(new ReceiveCookie())
+				.addInterceptor(new AddCookie()).build();
 		
-		call.enqueue(new Callback<ResponseBody>(){
-
-			public void onResponse(Call<ResponseBody> arg0, Response<ResponseBody> response) {	
-                if (response.isSuccessful()) {
-                    String str = "response code: " + response.code() + "\n body: " + response.body();
-                    try {
-                    	
-						//System.out.println("Bye World\n" + response.body().string());
-					} catch (Exception e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
-                }
-                else{
-                	//System.out.println("error: " + response.code());
-                }
-			}
-			
-			public void onFailure(Call<ResponseBody> arg0, Throwable arg1) {
-			}
-		});
+		retrofit = new Retrofit.Builder().baseUrl("https://ticket.interpark.com").client(client).build();
+		commService = retrofit.create(CommService.class);
+		
+		NoBodyReq(NO.TPLogin);
+		
+		//postMsg("/", "");
 	}
 }

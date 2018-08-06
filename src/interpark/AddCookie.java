@@ -22,7 +22,7 @@ public class AddCookie implements Interceptor {
 		}
 		
 		Request req = builder.build();
-		//System.out.println("=============\n" + req.headers());
+		System.out.println("[ADD] " + req.headers());
 		return chain.proceed(req);
 	}	
 }
